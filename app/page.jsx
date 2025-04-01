@@ -11,24 +11,45 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Prepare the form data to be sent
-    const formDataEncoded = new URLSearchParams({
+  
+    const appointmentData = {
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-    });
-
+      date: new Date().toISOString().split("T")[0], // Current date
+    };
+  
     try {
-      // Replace with your Apps Script URL
-      const response = await axios.post("https://script.google.com/macros/s/AKfycbzZSrJioLt2fCWY53lc53kfKvaFOFjvb3hGBN9DBHDaDPEee8Y2tyXwLRZ7I1eQtoy2/exec", formDataEncoded);
-      alert("Appointment booked successfully!");
-      setFormData({ name: "", email: "", phone: "" }); // Reset form fields after submission
+      // Step 1: Send data to Google Sheets
+      const formDataEncoded = new URLSearchParams(appointmentData);
+      const sheetResponse = await axios.post(
+        "https://script.google.com/macros/s/AKfycbzZSrJioLt2fCWY53lc53kfKvaFOFjvb3hGBN9DBHDaDPEee8Y2tyXwLRZ7I1eQtoy2/exec",
+        formDataEncoded
+      );
+  
+      if (sheetResponse.status === 200) {
+        console.log("Data saved to Google Sheets!");
+  
+        // Step 2: Send SMS confirmation
+        const smsResponse = await axios.post("/api/sendSms", appointmentData);
+  
+        if (smsResponse.data.success) {
+          alert("Appointment booked successfully! SMS sent.");
+        } else {
+          alert("Appointment booked, but SMS sending failed: " + smsResponse.data.error);
+        }
+  
+        // Reset form fields
+        setFormData({ name: "", email: "", phone: "" });
+      } else {
+        throw new Error("Failed to save data in Google Sheets.");
+      }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      alert("Failed to book appointment. Please try again.");
+      console.error("Error:", error);
+      alert("Failed to book appointment.");
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800">
