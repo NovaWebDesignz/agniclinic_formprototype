@@ -34,13 +34,22 @@ export default function Home() {
         const smsResponse = await axios.post("/api/sendSms", appointmentData);
   
         if (smsResponse.data.success) {
-          alert("Appointment booked successfully! SMS sent.");
+          console.log("SMS sent successfully!");
         } else {
-          alert("Appointment booked, but SMS sending failed: " + smsResponse.data.error);
+          console.warn("SMS sending failed:", smsResponse.data.error);
         }
   
-        // Reset form fields
-        setFormData({ name: "", email: "", phone: "" });
+        // Step 3: Send Email confirmation
+        const emailResponse = await axios.post("/api/sendEmail", appointmentData);
+  
+        if (emailResponse.data.success) {
+          console.log("Email sent successfully!");
+        } else {
+          console.warn("Email sending failed:", emailResponse.data.error);
+        }
+  
+        alert("Appointment booked! Confirmation sent via SMS and Email.");
+        setFormData({ name: "", email: "", phone: "" }); // Reset form fields
       } else {
         throw new Error("Failed to save data in Google Sheets.");
       }
@@ -49,6 +58,7 @@ export default function Home() {
       alert("Failed to book appointment.");
     }
   };
+  
   
 
   return (
